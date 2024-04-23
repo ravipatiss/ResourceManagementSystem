@@ -1,9 +1,14 @@
 import React, { useEffect } from "react";
 import { useState } from "react";
-import { addEmployee } from "../services/EmployeeService";
-import { useNavigate } from "react-router-dom";
+import {
+  addEmployee,
+  getEmployee,
+  putsEmployee,
+} from "../services/EmployeeService";
+import { useNavigate, useParams } from "react-router-dom";
 
 const EmployeeAdd = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -14,9 +19,19 @@ const EmployeeAdd = () => {
     lastName: "",
     email: "",
   });
+
+  useEffect(() => {
+    if (id)
+      getEmployee(id)
+        .then((response) => {
+          setFirstName(response.data.firstName);
+          setLastName(response.data.lastName);
+          setEmail(response.data.email);
+        })
+        .catch((error) => console.error(error));
+  }, [id]);
   const validateForm = () => {
     let valid = true;
-
     const errorsCopy = { ...errors };
     if (firstName.trim()) errorsCopy.firstName = "";
     else {
@@ -36,15 +51,36 @@ const EmployeeAdd = () => {
     setErrors(errorsCopy);
     return valid;
   };
+
   const submitForm = (e) => {
     e.preventDefault();
     if (validateForm) {
       const employee = { firstName, lastName, email };
-      console.log(employee);
-
-      addEmployee(employee).then((response) => console.log(response.data));
-      navigate("/employees");
+      if (id) {
+        putsEmployee(id, employee)
+          .then((response) => {
+            console.log(response.data);
+            navigate("/employees");
+          })
+          .catch((error) => {
+            console.error("Error updating employee:", error);
+          });
+      } else {
+        addEmployee(employee)
+          .then((response) => {
+            console.log(response.data);
+            navigate("/employees");
+          })
+          .catch((error) => {
+            console.error("Error updating employee:", error);
+          });
+      }
     }
+  };
+
+  const pageTitle = () => {
+    if (id) return <h2 className="text-center">Update Employee</h2>;
+    else return <h2 className="text-center">Add Employee</h2>;
   };
 
   return (
@@ -53,7 +89,7 @@ const EmployeeAdd = () => {
         <br></br>
         <div className="row">
           <div className="card col-md-6 offset-md-3 offset-md-3">
-            <h2 className="text-center">Add Employee</h2>
+            {pageTitle()}
             <div className="card-body">
               <form>
                 <div className="form-group mb-2">
